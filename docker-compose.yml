@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: portfolio_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: portfoliodb
+      MYSQL_USER: portfolio
+      MYSQL_PASSWORD: portfoliopass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:6
+    container_name: portfolio_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  app:
+    build: .
+    container_name: portfolio_app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: mongo
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/portfoliodb
+      SPRING_DATASOURCE_USERNAME: portfolio
+      SPRING_DATASOURCE_PASSWORD: portfoliopass
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/portfolio_audit
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+
+volumes:
+  mysql_data:
+  mongo_data:

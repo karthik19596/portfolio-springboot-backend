@@ -1,0 +1,55 @@
+FIVERR PORTFOLIO PROJECT — READY TO UPLOAD
+============================================
+
+1. GITHUB REPO (create this first)
+----------------------------------
+Go to https://github.com/new and create a public repo named:
+  portfolio-springboot-backend
+
+Upload the contents of this folder to the repo. Then copy the repo URL and paste it into the Fiverr portfolio "Live Preview" or "Project URL" field.
+
+2. PORTFOLIO TITLE
+------------------
+Task Management API — Spring Boot, JWT, JPA, MongoDB, Docker
+
+3. CATEGORY / SKILLS
+--------------------
+Java, Spring Boot, REST API, JWT Authentication, Microservices, MySQL, MongoDB, JPA, Hibernate, Docker, Swagger, JUnit, Backend Development
+
+4. PORTFOLIO DESCRIPTION (copy into Fiverr)
+-------------------------------------------
+A production-ready Task Management REST API built with Spring Boot 3, Java 17, and industry-standard backend practices. This project demonstrates how I design, secure, and document enterprise-grade APIs.
+
+Key highlights:
+- JWT-based authentication and role-based access control (USER / ADMIN)
+- Secure REST endpoints for task CRUD with pagination and sorting
+- Spring Data JPA with Hibernate for relational data (MySQL / H2)
+- Spring Data MongoDB for audit-log tracking of every task change
+- Global exception handling and request validation
+- OpenAPI / Swagger UI documentation
+- JUnit 5 + Mockito unit tests for service and controller layers
+- Docker + Docker Compose setup for one-command deployment
+
+The project follows clean architecture, separation of concerns, and clear naming conventions, making it easy to maintain and extend.
+
+Repository: [paste your GitHub URL here]
+Live API docs: https://[your-host]/swagger-ui.html (when deployed)
+
+5. THUMBNAIL / SCREENSHOT
+-------------------------
+Open the running Swagger UI at http://localhost:8080/swagger-ui.html, take a clean screenshot of the endpoints, and upload it as the portfolio cover image. This gives buyers immediate confidence in the work.
+
+6. WHY THIS WINS ORDERS
+-----------------------
+It shows real code, not just promises. Buyers can see:
+- Secure auth implementation
+- Database integration
+- Clean API structure
+- Docker delivery
+- Automated tests
+All of these match the gigs you already offer on Fiverr.
+
+Next steps:
+1. Push this project to GitHub.
+2. Add the GitHub link to your Fiverr portfolio.
+3. Share the repo link in your gig description or FAQ to boost trust.
