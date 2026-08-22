@@ -56,6 +56,30 @@ In Docker Desktop, ensure **Use the WSL 2 based engine** is enabled under
 **Settings > General**. The WSL 1 warning from `wsl --status` is harmless when
 the default version is 2.
 
+### Start MySQL and MongoDB on Windows
+
+After restarting Windows, open PowerShell and run:
+
+```powershell
+wsl --status
+wsl --update
+wsl --set-default-version 2
+docker info
+docker compose -f D:\Projects\portfolio-springboot-backend\docker-compose.yml up -d mysql mongodb
+```
+
+Verify that MySQL is listening on port 3306:
+
+```powershell
+Test-NetConnection 127.0.0.1 -Port 3306
+```
+
+The expected result is:
+
+```text
+TcpTestSucceeded : True
+```
+
 ## Quick Start (H2)
 
 The default profile uses an embedded, in-memory H2 database. Data is reset when the application restarts.
