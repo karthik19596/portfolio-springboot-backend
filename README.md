@@ -24,10 +24,44 @@ A production-ready **Task Management API** built with **Spring Boot 3**, designe
 - Unit tests for services and controllers
 - Dockerized for easy deployment
 
-## Quick Start
+## Prerequisites
+
+- Java 17 or later
+- Maven 3.8 or later
+- Docker Desktop with the WSL 2 backend enabled (required for the Docker setup)
+
+### Windows WSL 2 Setup
+
+Open PowerShell as Administrator and run these commands if WSL is not already installed:
+
+```powershell
+wsl --install
+```
+
+Restart Windows when prompted. After restarting, update WSL and select version 2:
+
+```powershell
+wsl --update
+wsl --set-default-version 2
+wsl --status
+```
+
+Install and start Docker Desktop, then verify that Docker is running:
+
+```powershell
+docker info
+```
+
+In Docker Desktop, ensure **Use the WSL 2 based engine** is enabled under
+**Settings > General**. The WSL 1 warning from `wsl --status` is harmless when
+the default version is 2.
+
+## Quick Start (H2)
+
+The default profile uses an embedded, in-memory H2 database. Data is reset when the application restarts.
 
 ```bash
-# Clone / open the project
+# From the project directory
 mvn clean install
 mvn spring-boot:run
 ```
@@ -35,24 +69,65 @@ mvn spring-boot:run
 - API base URL: `http://localhost:8080`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - H2 Console: `http://localhost:8080/h2-console`
+- Health check: `http://localhost:8080/actuator/health`
 
-The default profile uses an embedded H2 database and disables MongoDB, so the app runs instantly without any external services.
+Expected health response:
 
-## Full-Stack with Docker
-
-```bash
-docker-compose up --build
+```json
+{"status":"UP"}
 ```
 
-This starts the app along with MySQL and MongoDB containers using the `mongo` profile.
+## MySQL and MongoDB
 
-To run locally with MongoDB instead of H2:
+```bash
+# Start only the databases
+docker compose up -d mysql mongodb
+
+# Check container status
+docker compose ps
+```
+
+The local `mongo` profile connects to:
+
+- MySQL: `localhost:3306`, database `portfoliodb`
+- MongoDB: `localhost:27017`, database `portfolio_audit`
+
+Development MySQL credentials:
+
+- Root: `root` / `rootpass`
+- Application user: `portfolio` / `portfoliopass`
+
+Run the application locally with MySQL and MongoDB:
 
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=mongo
 ```
 
-Make sure MySQL and MongoDB are running first (or use Docker Compose).
+On Windows PowerShell, quote the profile property if necessary:
+
+```powershell
+mvn -f D:\Projects\portfolio-springboot-backend\pom.xml spring-boot:run "-Dspring-boot.run.profiles=mongo"
+```
+
+## Run the Complete Stack with Docker
+
+```bash
+docker compose up --build
+```
+
+This starts the application, MySQL, and MongoDB containers. Inside Docker, the application uses the `mongo` profile and connects to the database services by their Compose names.
+
+Stop the containers:
+
+```bash
+docker compose down
+```
+
+View MySQL logs:
+
+```bash
+docker compose logs mysql
+```
 
 ## API Endpoints
 
@@ -77,6 +152,14 @@ Make sure MySQL and MongoDB are running first (or use Docker Compose).
 ```
 
 Use the returned JWT in the `Authorization: Bearer <token>` header for protected endpoints.
+
+## Testing
+
+Run the automated tests with:
+
+```bash
+mvn test
+```
 
 ## About
 
