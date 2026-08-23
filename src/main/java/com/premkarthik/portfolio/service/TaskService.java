@@ -1,6 +1,7 @@
 package com.premkarthik.portfolio.service;
 
 import com.premkarthik.portfolio.dto.TaskRequest;
+import com.premkarthik.portfolio.dto.TaskStatsResponse;
 import com.premkarthik.portfolio.exception.ResourceNotFoundException;
 import com.premkarthik.portfolio.model.Task;
 import com.premkarthik.portfolio.model.User;
@@ -48,6 +49,24 @@ public class TaskService {
     public Page<Task> getTasks(Authentication authentication, Pageable pageable) {
         User user = getCurrentUser(authentication);
         return taskRepository.findByUserId(user.getId(), pageable);
+    }
+
+    public TaskStatsResponse getStats(Authentication authentication) {
+        Long userId = getCurrentUser(authentication).getId();
+
+        long total = taskRepository.countByUserId(userId);
+        long done = taskRepository.countByUserIdAndStatus(userId, "DONE");
+
+        return new TaskStatsResponse(
+                total,
+                taskRepository.countByUserIdAndStatus(userId, "TODO"),
+                taskRepository.countByUserIdAndStatus(userId, "IN_PROGRESS"),
+                done,
+                taskRepository.countByUserIdAndPriority(userId, "LOW"),
+                taskRepository.countByUserIdAndPriority(userId, "MEDIUM"),
+                taskRepository.countByUserIdAndPriority(userId, "HIGH"),
+                total == 0 ? 0d : Math.round((done * 1000d) / total) / 10d
+        );
     }
 
     public Task getTask(Long id, Authentication authentication) {

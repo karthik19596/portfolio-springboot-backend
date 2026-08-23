@@ -2,6 +2,8 @@ package com.premkarthik.portfolio.config;
 
 import com.premkarthik.portfolio.security.JwtAuthFilter;
 import com.premkarthik.portfolio.security.JwtUtil;
+import com.premkarthik.portfolio.security.RestAccessDeniedHandler;
+import com.premkarthik.portfolio.security.RestAuthenticationEntryPoint;
 import com.premkarthik.portfolio.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,10 +26,17 @@ public class SecurityConfig {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtUtil jwtUtil;
+    private final RestAuthenticationEntryPoint authenticationEntryPoint;
+    private final RestAccessDeniedHandler accessDeniedHandler;
 
-    public SecurityConfig(UserDetailsServiceImpl userDetailsService, JwtUtil jwtUtil) {
+    public SecurityConfig(UserDetailsServiceImpl userDetailsService,
+                          JwtUtil jwtUtil,
+                          RestAuthenticationEntryPoint authenticationEntryPoint,
+                          RestAccessDeniedHandler accessDeniedHandler) {
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+        this.accessDeniedHandler = accessDeniedHandler;
     }
 
     @Bean
@@ -41,9 +50,19 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(handling -> handling
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
+            )
             .authorizeHttpRequests(auth -> auth
+                // Listed individually rather than as /api/auth/** so that any
+                // endpoint added to AuthController later (such as /me) is
+                // authenticated by default instead of silently public.
                 .requestMatchers(
-                    "/api/auth/**",
+                    "/api/auth/login",
+                    "/api/auth/signup",
+                    "/api/auth/check-username",
+                    "/api/auth/check-email",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/api-docs/**",

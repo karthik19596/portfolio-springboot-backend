@@ -3,6 +3,8 @@ package com.premkarthik.portfolio.service;
 import com.premkarthik.portfolio.dto.AuthResponse;
 import com.premkarthik.portfolio.dto.LoginRequest;
 import com.premkarthik.portfolio.dto.SignupRequest;
+import com.premkarthik.portfolio.dto.UserProfileResponse;
+import com.premkarthik.portfolio.exception.ResourceNotFoundException;
 import com.premkarthik.portfolio.model.User;
 import com.premkarthik.portfolio.repository.UserRepository;
 import com.premkarthik.portfolio.security.JwtUtil;
@@ -59,6 +61,20 @@ public class AuthService {
         userRepository.save(user);
 
         return login(new LoginRequest(request.getUsername(), request.getPassword()));
+    }
+
+    public UserProfileResponse getProfile(Authentication authentication) {
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole(),
+                user.getCreatedAt()
+        );
     }
 
     public AuthResponse login(LoginRequest request) {

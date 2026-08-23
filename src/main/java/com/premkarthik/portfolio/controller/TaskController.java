@@ -2,6 +2,7 @@ package com.premkarthik.portfolio.controller;
 
 import com.premkarthik.portfolio.dto.ApiResponse;
 import com.premkarthik.portfolio.dto.TaskRequest;
+import com.premkarthik.portfolio.dto.TaskStatsResponse;
 import com.premkarthik.portfolio.model.Task;
 import com.premkarthik.portfolio.service.TaskService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -38,6 +39,11 @@ public class TaskController {
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
                                                             Authentication authentication) {
         return ResponseEntity.ok(ApiResponse.success(taskService.getTasks(authentication, pageable)));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<TaskStatsResponse>> getStats(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(taskService.getStats(authentication)));
     }
 
     @GetMapping("/{id}")

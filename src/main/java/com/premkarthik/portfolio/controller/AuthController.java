@@ -4,10 +4,13 @@ import com.premkarthik.portfolio.dto.ApiResponse;
 import com.premkarthik.portfolio.dto.AuthResponse;
 import com.premkarthik.portfolio.dto.LoginRequest;
 import com.premkarthik.portfolio.dto.SignupRequest;
+import com.premkarthik.portfolio.dto.UserProfileResponse;
 import com.premkarthik.portfolio.service.AuthService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,6 +32,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Login successful", authService.login(request)));
+    }
+
+    @GetMapping("/me")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> getCurrentUser(Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(authService.getProfile(authentication)));
     }
 
     @GetMapping("/check-username")
