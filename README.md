@@ -12,6 +12,7 @@ A production-ready **Task Management API** built with **Spring Boot 3**, designe
 - JUnit 5 + Mockito
 - Docker + Docker Compose
 - Maven
+- Angular 22 frontend (see `../portfolio-springboot-frontend` directory)
 
 ## Features
 
@@ -65,7 +66,7 @@ wsl --status
 wsl --update
 wsl --set-default-version 2
 docker info
-docker compose -f D:\Projects\portfolio-springboot-backend\docker-compose.yml up -d mysql mongodb
+docker compose -f D:\Projects\Portfolio\portfolio-springboot-backend\docker-compose.yml up -d mysql mongodb
 ```
 
 Verify that MySQL is listening on port 3306:
@@ -130,7 +131,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=mongo
 On Windows PowerShell, quote the profile property if necessary:
 
 ```powershell
-mvn -f D:\Projects\portfolio-springboot-backend\pom.xml spring-boot:run "-Dspring-boot.run.profiles=mongo"
+mvn -f D:\Projects\Portfolio\portfolio-springboot-backend\pom.xml spring-boot:run "-Dspring-boot.run.profiles=mongo"
 ```
 
 ## Run the Complete Stack with Docker
@@ -152,6 +153,22 @@ View MySQL logs:
 ```bash
 docker compose logs mysql
 ```
+
+## Angular Frontend
+
+A matching Angular 22 frontend is in the sibling directory `../portfolio-springboot-frontend`.
+
+### Start the Frontend
+
+```powershell
+cd D:\Projects\Portfolio\portfolio-springboot-frontend
+npm install
+ng serve --open
+```
+
+The frontend runs at `http://localhost:4200` and proxies API calls to `http://localhost:8080`.
+
+See `../portfolio-springboot-frontend/README.md` for more details.
 
 ## API Endpoints
 

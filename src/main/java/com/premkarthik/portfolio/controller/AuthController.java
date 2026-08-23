@@ -30,4 +30,14 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Login successful", authService.login(request)));
     }
+
+    @GetMapping("/check-username")
+    public ResponseEntity<ApiResponse<Boolean>> checkUsername(@RequestParam String username) {
+        return ResponseEntity.ok(ApiResponse.success(authService.isUsernameAvailable(username)));
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<ApiResponse<Boolean>> checkEmail(@RequestParam String email) {
+        return ResponseEntity.ok(ApiResponse.success(authService.isEmailAvailable(email)));
+    }
 }
