@@ -2,6 +2,10 @@
 
 A production-ready **Task Management API** built with **Spring Boot 3**, designed to showcase real-world backend engineering skills.
 
+Repository: `https://github.com/karthik19596/portfolio-springboot-backend`
+
+Matching frontend: `https://github.com/karthik19596/portfolio-springboot-frontend`
+
 ## Tech Stack
 
 - Java 17 + Spring Boot 3.3
@@ -12,11 +16,10 @@ A production-ready **Task Management API** built with **Spring Boot 3**, designe
 - JUnit 5 + Mockito
 - Docker + Docker Compose
 - Maven
-- Angular 22 frontend (see `../portfolio-springboot-frontend` directory)
 
 ## Features
 
-- Secure JWT login & registration
+- Secure JWT login & registration with username/email availability checks
 - CRUD operations for tasks with pagination and sorting
 - Role-based access (USER / ADMIN)
 - MongoDB audit log for every task change
@@ -24,62 +27,13 @@ A production-ready **Task Management API** built with **Spring Boot 3**, designe
 - Input validation and Swagger documentation
 - Unit tests for services and controllers
 - Dockerized for easy deployment
+- CORS configured for Angular frontend integration
 
 ## Prerequisites
 
 - Java 17 or later
 - Maven 3.8 or later
-- Docker Desktop with the WSL 2 backend enabled (required for the Docker setup)
-
-### Windows WSL 2 Setup
-
-Open PowerShell as Administrator and run these commands if WSL is not already installed:
-
-```powershell
-wsl --install
-```
-
-Restart Windows when prompted. After restarting, update WSL and select version 2:
-
-```powershell
-wsl --update
-wsl --set-default-version 2
-wsl --status
-```
-
-Install and start Docker Desktop, then verify that Docker is running:
-
-```powershell
-docker info
-```
-
-In Docker Desktop, ensure **Use the WSL 2 based engine** is enabled under
-**Settings > General**. The WSL 1 warning from `wsl --status` is harmless when
-the default version is 2.
-
-### Start MySQL and MongoDB on Windows
-
-After restarting Windows, open PowerShell and run:
-
-```powershell
-wsl --status
-wsl --update
-wsl --set-default-version 2
-docker info
-docker compose -f D:\Projects\Portfolio\portfolio-springboot-backend\docker-compose.yml up -d mysql mongodb
-```
-
-Verify that MySQL is listening on port 3306:
-
-```powershell
-Test-NetConnection 127.0.0.1 -Port 3306
-```
-
-The expected result is:
-
-```text
-TcpTestSucceeded : True
-```
+- Docker Desktop (required only for MySQL/MongoDB setup)
 
 ## Quick Start (H2)
 
@@ -102,13 +56,17 @@ Expected health response:
 {"status":"UP"}
 ```
 
-## MySQL and MongoDB
+## MySQL and MongoDB (Local Development)
+
+Start the databases:
 
 ```bash
-# Start only the databases
 docker compose up -d mysql mongodb
+```
 
-# Check container status
+Check container status:
+
+```bash
 docker compose ps
 ```
 
@@ -122,16 +80,16 @@ Development MySQL credentials:
 - Root: `root` / `rootpass`
 - Application user: `portfolio` / `portfoliopass`
 
-Run the application locally with MySQL and MongoDB:
+Run the application with MySQL and MongoDB:
 
 ```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=mongo
 ```
 
-On Windows PowerShell, quote the profile property if necessary:
+On Windows PowerShell, quote the profile property:
 
 ```powershell
-mvn -f D:\Projects\Portfolio\portfolio-springboot-backend\pom.xml spring-boot:run "-Dspring-boot.run.profiles=mongo"
+mvn spring-boot:run "-Dspring-boot.run.profiles=mongo"
 ```
 
 ## Run the Complete Stack with Docker
@@ -156,32 +114,37 @@ docker compose logs mysql
 
 ## Angular Frontend
 
-A matching Angular 22 frontend is in the sibling directory `../portfolio-springboot-frontend`.
+A matching Angular 22 frontend is available at:
+
+`https://github.com/karthik19596/portfolio-springboot-frontend`
 
 ### Start the Frontend
 
-```powershell
-cd D:\Projects\Portfolio\portfolio-springboot-frontend
+From the frontend repository:
+
+```bash
 npm install
 ng serve --open
 ```
 
 The frontend runs at `http://localhost:4200` and proxies API calls to `http://localhost:8080`.
 
-See `../portfolio-springboot-frontend/README.md` for more details.
+See the frontend README for more details.
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | /api/auth/signup | Register a new user |
-| POST | /api/auth/login | Login and receive JWT |
-| POST | /api/tasks | Create a task |
-| GET | /api/tasks | List paginated tasks |
-| GET | /api/tasks/{id} | Get a task by ID |
-| PUT | /api/tasks/{id} | Update a task |
-| DELETE | /api/tasks/{id} | Delete a task |
-| GET | /api/admin/audit-logs | Admin-only audit logs |
+| POST | `/api/auth/signup` | Register a new user |
+| POST | `/api/auth/login` | Login and receive JWT |
+| GET | `/api/auth/check-username` | Check if username is available |
+| GET | `/api/auth/check-email` | Check if email is available |
+| POST | `/api/tasks` | Create a task |
+| GET | `/api/tasks` | List paginated tasks |
+| GET | `/api/tasks/{id}` | Get a task by ID |
+| PUT | `/api/tasks/{id}` | Update a task |
+| DELETE | `/api/tasks/{id}` | Delete a task |
+| GET | `/api/admin/audit-logs` | Admin-only audit logs |
 
 ## Sample Login
 
@@ -194,6 +157,37 @@ See `../portfolio-springboot-frontend/README.md` for more details.
 
 Use the returned JWT in the `Authorization: Bearer <token>` header for protected endpoints.
 
+## Database Queries
+
+### H2 Console (default profile)
+
+URL: `http://localhost:8080/h2-console`
+
+- JDBC URL: `jdbc:h2:mem:portfoliodb`
+- Username: `root`
+- Password: `root`
+
+### MySQL Workbench (mongo profile)
+
+- Hostname: `127.0.0.1`
+- Port: `3306`
+- Username: `root`
+- Password: `rootpass`
+- Default Schema: `portfoliodb`
+
+Sample queries:
+
+```sql
+USE portfoliodb;
+
+SELECT * FROM users;
+SELECT * FROM tasks;
+
+SELECT u.username, t.title, t.status, t.priority
+FROM users u
+JOIN tasks t ON u.id = t.user_id;
+```
+
 ## Testing
 
 Run the automated tests with:
@@ -205,5 +199,3 @@ mvn test
 ## About
 
 Built by **Prem Karthik** — Java Spring Boot Backend Developer with 5+ years of experience delivering enterprise-grade REST APIs, microservices, and secure backend systems.
-
-Looking for a reliable backend developer? Message me on Fiverr before ordering.
