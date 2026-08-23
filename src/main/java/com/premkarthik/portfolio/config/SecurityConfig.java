@@ -4,6 +4,7 @@ import com.premkarthik.portfolio.security.JwtAuthFilter;
 import com.premkarthik.portfolio.security.JwtUtil;
 import com.premkarthik.portfolio.security.RestAccessDeniedHandler;
 import com.premkarthik.portfolio.security.RestAuthenticationEntryPoint;
+import com.premkarthik.portfolio.security.TokenDenylist;
 import com.premkarthik.portfolio.security.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,20 +29,23 @@ public class SecurityConfig {
     private final JwtUtil jwtUtil;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+    private final TokenDenylist tokenDenylist;
 
     public SecurityConfig(UserDetailsServiceImpl userDetailsService,
                           JwtUtil jwtUtil,
                           RestAuthenticationEntryPoint authenticationEntryPoint,
-                          RestAccessDeniedHandler accessDeniedHandler) {
+                          RestAccessDeniedHandler accessDeniedHandler,
+                          TokenDenylist tokenDenylist) {
         this.userDetailsService = userDetailsService;
         this.jwtUtil = jwtUtil;
         this.authenticationEntryPoint = authenticationEntryPoint;
         this.accessDeniedHandler = accessDeniedHandler;
+        this.tokenDenylist = tokenDenylist;
     }
 
     @Bean
     public JwtAuthFilter jwtAuthFilter() {
-        return new JwtAuthFilter(jwtUtil, userDetailsService);
+        return new JwtAuthFilter(jwtUtil, userDetailsService, tokenDenylist);
     }
 
     @Bean
@@ -49,6 +53,9 @@ public class SecurityConfig {
         http
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
+            // Spring's default LogoutFilter answers /logout with a 302 to an
+            // HTML page. Revocation is handled by POST /api/auth/logout.
+            .logout(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(handling -> handling
                 .authenticationEntryPoint(authenticationEntryPoint)

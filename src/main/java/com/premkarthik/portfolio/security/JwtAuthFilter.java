@@ -17,10 +17,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
+    private final TokenDenylist tokenDenylist;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService) {
+    public JwtAuthFilter(JwtUtil jwtUtil,
+                         UserDetailsServiceImpl userDetailsService,
+                         TokenDenylist tokenDenylist) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.tokenDenylist = tokenDenylist;
     }
 
     @Override
@@ -29,7 +33,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             String jwt = parseJwt(request);
-            if (jwt != null && jwtUtil.validateToken(jwt)) {
+            if (jwt != null && jwtUtil.validateToken(jwt) && !tokenDenylist.isRevoked(jwt)) {
                 String username = jwtUtil.getUsernameFromToken(jwt);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 UsernamePasswordAuthenticationToken auth =
