@@ -204,6 +204,10 @@ deployment commands are documented here:
 
 [`k8s/README.md`](k8s/README.md)
 
+The complete platform command reference and implementation summary is here:
+
+[`BackendKubernetes.md`](BackendKubernetes.md)
+
 The backend also exposes:
 
 - Health: `http://localhost:8080/actuator/health`
