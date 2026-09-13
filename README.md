@@ -196,6 +196,19 @@ Run the automated tests with:
 mvn test
 ```
 
+## Kubernetes and Observability
+
+The Docker Desktop Kubernetes deployment, Prometheus metrics, Grafana
+dashboards, Zipkin tracing, alert rules, Ingress, persistent volumes, and
+deployment commands are documented here:
+
+[`k8s/README.md`](k8s/README.md)
+
+The backend also exposes:
+
+- Health: `http://localhost:8080/actuator/health`
+- Prometheus metrics: `http://localhost:8080/actuator/prometheus`
+
 ## About
 
 Built by **Prem Karthik** — Java Spring Boot Backend Developer with 5+ years of experience delivering enterprise-grade REST APIs, microservices, and secure backend systems.

@@ -18,35 +18,58 @@ kubectl get nodes
 Docker Desktop must be running:
 
 ```powershell
-docker build -t portfolio-backend:local D:\Projects\Portfolio\portfolio-springboot-backend
+docker build -t portfolio-backend:observability D:\Projects\Portfolio\portfolio-springboot-backend
 docker build -t portfolio-frontend:local D:\Projects\Portfolio\portfolio-springboot-frontend
 ```
 
-## 3. Deploy the stack
+## 3. Create local secrets
+
+Do not apply `secret.yaml` to the cluster or commit it to Git. Create the
+Secret locally:
 
 ```powershell
 $k8s = "D:\Projects\Portfolio\portfolio-springboot-backend\k8s"
 kubectl apply -f "$k8s\namespace.yaml"
-kubectl apply -f "$k8s\secret.yaml"
+kubectl create secret generic portfolio-secrets `
+  --namespace portfolio `
+  --from-literal=mysql-root-password=rootpass `
+  --from-literal=mysql-password=portfoliopass `
+  --from-literal=jwt-secret='replace-with-a-long-random-secret' `
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+## 4. Deploy the stack
+
+```powershell
+$k8s = "D:\Projects\Portfolio\portfolio-springboot-backend\k8s"
 kubectl apply -f "$k8s\mysql.yaml"
 kubectl apply -f "$k8s\mongodb.yaml"
 kubectl apply -f "$k8s\backend.yaml"
 kubectl apply -f "$k8s\frontend.yaml"
+kubectl apply -f "$k8s\prometheus.yaml"
+kubectl apply -f "$k8s\grafana.yaml"
+kubectl apply -f "$k8s\zipkin.yaml"
+kubectl apply -f "$k8s\ingress.yaml"
 kubectl get pods -n portfolio -w
 ```
 
-Press `Ctrl+C` after the pods are ready. Use port-forwarding to access the frontend:
+The MySQL and MongoDB Deployments use the `Recreate` strategy because their
+data volumes support one writer at a time. All Deployments include CPU and
+memory requests and limits.
+
+Press `Ctrl+C` after the pods are ready. Use the Ingress controller to access
+the frontend:
 
 ```powershell
-kubectl port-forward -n portfolio service/frontend 8081:80
+kubectl port-forward -n ingress-nginx service/ingress-nginx-controller 8082:80
 ```
 
 Keep that terminal open and browse to:
 
-`http://localhost:8081`
+`http://localhost:8082`
 
-The Service is also exposed as NodePort `30080`, so `http://localhost:30080`
-may work depending on Docker Desktop networking.
+The frontend Nginx configuration forwards `/api` requests to the internal
+backend Service.
 
 Check the backend:
 
@@ -55,7 +78,7 @@ kubectl get svc -n portfolio
 kubectl logs deployment/backend -n portfolio
 ```
 
-## 4. Stop or remove it
+## 5. Stop or remove it
 
 Stop the workloads while keeping database data:
 
@@ -90,16 +113,13 @@ Open Grafana in another terminal:
 kubectl port-forward -n portfolio service/grafana 3000:3000
 ```
 
-Browse to `http://localhost:3000` and sign in with:
+Browse to `http://localhost:3000` and sign in with the Grafana admin password
+you configured. If port `3000` is already in use, use `3001:3000` in the
+port-forward command and browse to `http://localhost:3001`.
 
-- Username: `admin`
-- Password: `admin`
-
-Grafana already has Prometheus configured as its default data source. Change
-the default password before using this outside a local learning cluster.
-
-Grafana data is stored in the `grafana-data-v2` PersistentVolumeClaim so
-dashboards and alert settings survive pod restarts.
+Grafana already has Prometheus configured as its default data source. Grafana
+data is stored in the `grafana-data-v2` PersistentVolumeClaim, so dashboards
+and alert settings survive pod restarts.
 
 Open Zipkin to inspect distributed traces:
 
@@ -134,3 +154,25 @@ To inspect their state:
 ```powershell
 kubectl exec -n portfolio deployment/prometheus -- wget -qO- http://localhost:9090/api/v1/rules
 ```
+
+## Ingress controller installation
+
+Install the NGINX Ingress controller once per local cluster:
+
+```powershell
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=180s
+kubectl get ingressclass
+```
+
+## CI/CD
+
+The backend and frontend repositories each contain a GitHub Actions workflow:
+
+```text
+.github/workflows/ci-cd.yml
+```
+
+Pull requests run tests and builds. Pushes to `main` also publish images to
+GitHub Container Registry. The local Kubernetes cluster uses locally built
+images; cloud Kubernetes deployments should use the published GHCR image tags.
