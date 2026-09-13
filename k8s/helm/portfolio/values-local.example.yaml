@@ -1,0 +1,8 @@
+secrets:
+  create: true
+  mysqlRootPassword: replace-me
+  mysqlPassword: replace-me
+  jwtSecret: replace-with-a-long-random-secret
+
+grafana:
+  adminPassword: replace-me

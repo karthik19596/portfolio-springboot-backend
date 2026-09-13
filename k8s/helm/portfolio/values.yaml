@@ -1,0 +1,61 @@
+namespace: portfolio
+
+images:
+  backend:
+    repository: portfolio-backend
+    tag: observability
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: portfolio-frontend
+    tag: local
+    pullPolicy: IfNotPresent
+
+secrets:
+  create: true
+  name: portfolio-secrets
+  mysqlRootPassword: ""
+  mysqlPassword: ""
+  jwtSecret: ""
+
+existingSecret:
+  enabled: false
+  name: portfolio-secrets
+
+resources:
+  default:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  frontend:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+storage:
+  mysql: 1Gi
+  mongodb: 1Gi
+  prometheus: 1Gi
+  grafana: 1Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  host: portfolio-helm.local
+
+grafana:
+  adminUser: admin
+  adminPassword: ""
+
+monitoring:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+  grafana:
+    image: grafana/grafana:11.2.0
+  zipkin:
+    image: openzipkin/zipkin:3

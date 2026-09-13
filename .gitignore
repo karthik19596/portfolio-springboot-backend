@@ -42,3 +42,4 @@ Thumbs.db
 /frontend/dist/
 /frontend/.angular/
 k8s/secret.yaml
+k8s/helm/portfolio/values-local.yaml

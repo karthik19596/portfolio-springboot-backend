@@ -284,6 +284,79 @@ Qodana performs Java code quality analysis for Java 17.
 The `QODANA_TOKEN` is configured through GitHub repository secrets when
 required.
 
+## Helm Chart
+
+The Helm chart packages the complete platform:
+
+```text
+k8s/helm/portfolio
+```
+
+It includes:
+
+- Backend and frontend Deployments
+- MySQL and MongoDB
+- Prometheus, Grafana, and Zipkin
+- PersistentVolumeClaims
+- Ingress
+- Prometheus alert rules
+- Configurable Kubernetes Secrets
+- Resource requests and limits
+
+The chart is configured through:
+
+```text
+k8s/helm/portfolio/values.yaml
+k8s/helm/portfolio/values-local.example.yaml
+```
+
+Create the ignored local values file:
+
+```powershell
+Copy-Item `
+  k8s\helm\portfolio\values-local.example.yaml `
+  k8s\helm\portfolio\values-local.yaml
+```
+
+Replace the placeholders before installing. The local values file is ignored
+by Git because it contains credentials.
+
+Validate the chart:
+
+```powershell
+helm lint k8s\helm\portfolio `
+  --values k8s\helm\portfolio\values-local.yaml
+
+helm template portfolio-helm k8s\helm\portfolio `
+  --namespace portfolio-helm `
+  --set namespace=portfolio-helm `
+  --set ingress.host=portfolio-helm.local `
+  --values k8s\helm\portfolio\values-local.yaml
+```
+
+Install or upgrade the Helm release in a separate test namespace:
+
+```powershell
+helm upgrade --install portfolio-helm k8s\helm\portfolio `
+  --namespace portfolio-helm `
+  --create-namespace `
+  --set namespace=portfolio-helm `
+  --set ingress.host=portfolio-helm.local `
+  --values k8s\helm\portfolio\values-local.yaml
+```
+
+Check the release:
+
+```powershell
+helm status portfolio-helm -n portfolio-helm
+kubectl get pods -n portfolio-helm
+kubectl get pvc -n portfolio-helm
+kubectl get ingress -n portfolio-helm
+```
+
+The Helm deployment is tested in `portfolio-helm` so it does not conflict
+with the original raw-manifest deployment in `portfolio`.
+
 ## Documentation and Security Notes
 
 - `README.md` contains backend setup and API documentation.

@@ -176,3 +176,47 @@ The backend and frontend repositories each contain a GitHub Actions workflow:
 Pull requests run tests and builds. Pushes to `main` also publish images to
 GitHub Container Registry. The local Kubernetes cluster uses locally built
 images; cloud Kubernetes deployments should use the published GHCR image tags.
+
+## Helm
+
+The Helm chart is located at:
+
+```text
+k8s/helm/portfolio
+```
+
+It packages the backend, frontend, databases, Prometheus, Grafana, Zipkin,
+Ingress, persistent volumes, and Secrets.
+
+Check that Helm is installed:
+
+```powershell
+helm version
+```
+
+Create a local values file and replace every placeholder:
+
+```powershell
+Copy-Item k8s\helm\portfolio\values-local.example.yaml k8s\helm\portfolio\values-local.yaml
+```
+
+Install or upgrade the chart:
+
+```powershell
+helm upgrade --install portfolio k8s\helm\portfolio `
+  --namespace portfolio `
+  --create-namespace `
+  --values k8s\helm\portfolio\values-local.yaml
+```
+
+Render or lint the chart before installing:
+
+```powershell
+helm template portfolio k8s\helm\portfolio `
+  --values k8s\helm\portfolio\values-local.yaml
+
+helm lint k8s\helm\portfolio `
+  --values k8s\helm\portfolio\values-local.yaml
+```
+
+`values-local.yaml` is ignored by Git because it contains local credentials.
