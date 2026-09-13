@@ -75,7 +75,9 @@ public class SecurityConfig {
                     "/api-docs/**",
                     "/v3/api-docs/**",
                     "/h2-console/**",
-                    "/actuator/health"
+                    "/actuator/health",
+                    "/actuator/health/**",
+                    "/actuator/prometheus"
                 ).permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
