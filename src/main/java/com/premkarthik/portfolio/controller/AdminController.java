@@ -88,6 +88,13 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(adminService.getTasks(pageable)));
     }
 
+    @PostMapping("/tasks")
+    public ResponseEntity<ApiResponse<AdminTaskResponse>> createTask(
+            @Valid @RequestBody TaskRequest request, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Task assigned", adminService.createTask(request, authentication)));
+    }
+
     @PutMapping("/tasks/{id}")
     public ResponseEntity<ApiResponse<AdminTaskResponse>> updateTask(
             @PathVariable Long id, @Valid @RequestBody TaskRequest request) {

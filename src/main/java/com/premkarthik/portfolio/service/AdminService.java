@@ -166,6 +166,24 @@ public class AdminService {
     }
 
     @Transactional
+    public AdminTaskResponse createTask(TaskRequest request, Authentication authentication) {
+        User creator = currentUser(authentication);
+        User assignee = getAssignee(request.getAssignedUserId());
+        validateAssignment(creator, assignee);
+
+        Task task = new Task();
+        task.setTitle(request.getTitle());
+        task.setDescription(request.getDescription());
+        task.setStatus(request.getStatus());
+        task.setPriority(request.getPriority());
+        task.setUser(assignee);
+        Task saved = taskRepository.save(task);
+        auditLogService.log("CREATE", "Task", saved.getId(), creator.getUsername(),
+                "Assigned task '" + saved.getTitle() + "' to " + assignee.getUsername());
+        return AdminTaskResponse.from(saved);
+    }
+
+    @Transactional
     public AdminTaskResponse updateTask(Long taskId, TaskRequest request) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with id: " + taskId));
@@ -177,6 +195,29 @@ public class AdminService {
         auditLogService.log("UPDATE", "Task", saved.getId(), task.getUser().getUsername(),
                 "Admin updated task: " + saved.getTitle());
         return AdminTaskResponse.from(saved);
+    }
+
+    private User getAssignee(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("An assignee is required");
+        }
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
+    }
+
+    private void validateAssignment(User creator, User assignee) {
+        if (creator.getRole().equals("ADMIN") && !assignee.getRole().equals("USER")) {
+            throw new IllegalArgumentException("ADMIN users can assign tasks only to USER accounts");
+        }
+        if (creator.getRole().equals("SUPER_ADMIN")
+                && !(assignee.getRole().equals("USER") || assignee.getRole().equals("ADMIN"))) {
+            throw new IllegalArgumentException("SUPER_ADMIN users can assign tasks to USER or ADMIN accounts");
+        }
+    }
+
+    private User currentUser(Authentication authentication) {
+        return userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     @Transactional

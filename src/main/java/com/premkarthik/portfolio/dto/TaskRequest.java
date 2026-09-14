@@ -15,4 +15,6 @@ public class TaskRequest {
 
     private String status = "TODO";
     private String priority = "MEDIUM";
+
+    private Long assignedUserId;
 }

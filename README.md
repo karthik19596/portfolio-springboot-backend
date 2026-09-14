@@ -23,6 +23,7 @@ Matching frontend: `https://github.com/karthik19596/portfolio-springboot-fronten
 - CRUD operations for tasks with pagination and sorting
 - Role-based access with `USER`, `ADMIN`, and `SUPER_ADMIN`
 - Protected admin management for users, roles, and tasks
+- Role-based task assignment to users and administrators
 - Refresh-token rotation with database persistence and revocation
 - Password-reset request and confirmation endpoints
 - MongoDB audit log for every task change
@@ -159,6 +160,7 @@ See the frontend README for more details.
 | PUT | `/api/admin/users/{id}` | Update a user's username, email, and role |
 | DELETE | `/api/admin/users/{id}` | Delete a user and their tasks |
 | GET | `/api/admin/tasks` | List all tasks for administrators |
+| POST | `/api/admin/tasks` | Create and assign a task |
 | PUT | `/api/admin/tasks/{id}` | Update any task as an administrator |
 | DELETE | `/api/admin/tasks/{id}` | Delete any task as an administrator |
 
@@ -169,6 +171,8 @@ Admin access rules:
 - Regular admins cannot see administrator accounts in `GET /api/admin/users`.
 - Users cannot delete their own account.
 - Only a `SUPER_ADMIN` can create, edit, delete, or assign the `SUPER_ADMIN` role.
+- `ADMIN` users can assign tasks only to `USER` accounts.
+- `SUPER_ADMIN` users can assign tasks to `USER` and `ADMIN` accounts.
 
 ## Sample Login
 
