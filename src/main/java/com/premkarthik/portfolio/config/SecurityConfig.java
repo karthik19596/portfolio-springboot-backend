@@ -68,6 +68,9 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/login",
                     "/api/auth/signup",
+                    "/api/auth/refresh",
+                    "/api/auth/password-reset/request",
+                    "/api/auth/password-reset/confirm",
                     "/api/auth/check-username",
                     "/api/auth/check-email",
                     "/swagger-ui/**",
@@ -79,7 +82,7 @@ public class SecurityConfig {
                     "/actuator/health/**",
                     "/actuator/prometheus"
                 ).permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class)

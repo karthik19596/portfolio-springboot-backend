@@ -3,6 +3,11 @@
 This chart packages the backend, frontend, MySQL, MongoDB, Prometheus, Grafana,
 Zipkin, persistent volumes, Ingress, and Kubernetes Secret.
 
+The application deployed by this chart supports `USER`, `ADMIN`, and
+`SUPER_ADMIN` roles, refresh-token rotation, password reset, and the
+role-protected admin dashboard. New public registrations always start as
+`USER`; bootstrap the first `SUPER_ADMIN` through MySQL after installation.
+
 ## Prerequisites
 
 - Helm 3
@@ -42,6 +47,9 @@ kubectl get pods -n portfolio
 
 The chart creates the `portfolio-secrets` Secret from the values file. Do not
 commit `values-local.yaml`.
+
+After bootstrapping a `SUPER_ADMIN`, regular admins can manage normal users and
+tasks. Only `SUPER_ADMIN` users can see or manage administrator accounts.
 
 ## Use an existing Secret
 

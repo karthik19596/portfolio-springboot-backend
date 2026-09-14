@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface TaskRepository extends JpaRepository<Task, Long> {
     Page<Task> findByUserId(Long userId, Pageable pageable);
     Optional<Task> findByIdAndUserId(Long id, Long userId);
+    void deleteByUser_Id(Long userId);
 
     long countByUserId(Long userId);
     long countByUserIdAndStatus(Long userId, String status);

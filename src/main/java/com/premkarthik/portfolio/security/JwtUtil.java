@@ -26,6 +26,10 @@ public class JwtUtil {
 
     public String generateToken(Authentication authentication) {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
+        return generateToken(userPrincipal);
+    }
+
+    public String generateToken(UserDetailsImpl userPrincipal) {
         return Jwts.builder()
                 .subject(userPrincipal.getUsername())
                 .claim("role", userPrincipal.getAuthorities().iterator().next().getAuthority())

@@ -21,13 +21,17 @@ Matching frontend: `https://github.com/karthik19596/portfolio-springboot-fronten
 
 - Secure JWT login & registration with username/email availability checks
 - CRUD operations for tasks with pagination and sorting
-- Role-based access (USER / ADMIN)
+- Role-based access with `USER`, `ADMIN`, and `SUPER_ADMIN`
+- Protected admin management for users, roles, and tasks
+- Refresh-token rotation with database persistence and revocation
+- Password-reset request and confirmation endpoints
 - MongoDB audit log for every task change
 - Global exception handling with consistent API responses
 - Input validation and Swagger documentation
 - Unit tests for services and controllers
 - Dockerized for easy deployment
 - CORS configured for Angular frontend integration
+- Public signup always creates a `USER`; elevated roles require admin authorization
 
 ## Prerequisites
 
@@ -137,14 +141,34 @@ See the frontend README for more details.
 |--------|----------|-------------|
 | POST | `/api/auth/signup` | Register a new user |
 | POST | `/api/auth/login` | Login and receive JWT |
+| POST | `/api/auth/logout` | Revoke the current access and refresh session |
+| POST | `/api/auth/refresh` | Rotate a refresh token and receive a new JWT |
 | GET | `/api/auth/check-username` | Check if username is available |
 | GET | `/api/auth/check-email` | Check if email is available |
+| POST | `/api/auth/password-reset/request` | Request a password-reset link by email |
+| POST | `/api/auth/password-reset/confirm` | Set a new password with a reset token |
 | POST | `/api/tasks` | Create a task |
 | GET | `/api/tasks` | List paginated tasks |
 | GET | `/api/tasks/{id}` | Get a task by ID |
 | PUT | `/api/tasks/{id}` | Update a task |
 | DELETE | `/api/tasks/{id}` | Delete a task |
 | GET | `/api/admin/audit-logs` | Admin-only audit logs |
+| GET | `/api/admin/users` | List users for administrators |
+| POST | `/api/admin/users` | Create a user with an authorized role |
+| PATCH | `/api/admin/users/{id}/role` | Change a user's role |
+| PUT | `/api/admin/users/{id}` | Update a user's username, email, and role |
+| DELETE | `/api/admin/users/{id}` | Delete a user and their tasks |
+| GET | `/api/admin/tasks` | List all tasks for administrators |
+| PUT | `/api/admin/tasks/{id}` | Update any task as an administrator |
+| DELETE | `/api/admin/tasks/{id}` | Delete any task as an administrator |
+
+Admin access rules:
+
+- `ADMIN` users can manage `USER` accounts and tasks.
+- `SUPER_ADMIN` users can view and manage `USER`, `ADMIN`, and `SUPER_ADMIN` accounts.
+- Regular admins cannot see administrator accounts in `GET /api/admin/users`.
+- Users cannot delete their own account.
+- Only a `SUPER_ADMIN` can create, edit, delete, or assign the `SUPER_ADMIN` role.
 
 ## Sample Login
 
@@ -156,6 +180,19 @@ See the frontend README for more details.
 ```
 
 Use the returned JWT in the `Authorization: Bearer <token>` header for protected endpoints.
+
+Login and signup also return a refresh token. Refresh tokens are stored as
+SHA-256 hashes in the database, rotated after use, and revoked on logout or
+password reset. Access tokens expire according to `jwt.expiration-ms`.
+
+Password-reset tokens are single-use and expire after 30 minutes. The reset
+request endpoint intentionally returns the same response whether or not the
+email exists. An email provider must be connected to deliver the token to
+users; the confirm endpoint accepts the token from that email.
+
+The Angular frontend provides `/forgot-password` and `/reset-password` pages.
+The reset page accepts a token from an email link using the `token` query
+parameter.
 
 ## Database Queries
 

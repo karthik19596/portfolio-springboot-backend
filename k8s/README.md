@@ -2,6 +2,11 @@
 
 This setup is intended for Docker Desktop Kubernetes on Windows.
 
+The deployed application includes JWT refresh-token rotation, password reset,
+role-based administration, and the Angular admin dashboard. Kubernetes
+controls deployment infrastructure; application roles are managed through the
+application after the first `SUPER_ADMIN` is bootstrapped.
+
 ## 1. Enable the local cluster
 
 1. Start Docker Desktop.
@@ -70,6 +75,18 @@ Keep that terminal open and browse to:
 
 The frontend Nginx configuration forwards `/api` requests to the internal
 backend Service.
+
+After the first deployment, create a user through the frontend and promote the
+first administrator using MySQL:
+
+```powershell
+kubectl exec -it deployment/mysql -n portfolio -- `
+  mysql -u root -p"$env:MYSQL_ROOT_PASSWORD" -e `
+  "USE portfoliodb; UPDATE users SET role='SUPER_ADMIN' WHERE email='your-email@example.com';"
+```
+
+Log out and log in again after changing a role so the new role is included in
+the JWT.
 
 Check the backend:
 

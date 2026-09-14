@@ -3,6 +3,9 @@ package com.premkarthik.portfolio.controller;
 import com.premkarthik.portfolio.dto.ApiResponse;
 import com.premkarthik.portfolio.dto.AuthResponse;
 import com.premkarthik.portfolio.dto.LoginRequest;
+import com.premkarthik.portfolio.dto.PasswordResetConfirmRequest;
+import com.premkarthik.portfolio.dto.PasswordResetRequest;
+import com.premkarthik.portfolio.dto.RefreshTokenRequest;
 import com.premkarthik.portfolio.dto.SignupRequest;
 import com.premkarthik.portfolio.dto.UserProfileResponse;
 import com.premkarthik.portfolio.service.AuthService;
@@ -33,6 +36,25 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Login successful", authService.login(request)));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed", authService.refresh(request)));
+    }
+
+    @PostMapping("/password-reset/request")
+    public ResponseEntity<ApiResponse<Void>> requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        authService.requestPasswordReset(request);
+        return ResponseEntity.ok(ApiResponse.success(
+                "If an account exists for that email, password reset instructions have been sent", null));
+    }
+
+    @PostMapping("/password-reset/confirm")
+    public ResponseEntity<ApiResponse<Void>> confirmPasswordReset(
+            @Valid @RequestBody PasswordResetConfirmRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successfully", null));
     }
 
     @PostMapping("/logout")
