@@ -37,6 +37,9 @@ Thumbs.db
 .env
 *.env.local
 
+### Backups ###
+Portfolio-Backups/
+
 ### Frontend ###
 /frontend/node_modules/
 /frontend/dist/
