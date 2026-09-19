@@ -23,14 +23,16 @@ Matching frontend: `https://github.com/karthik19596/portfolio-springboot-fronten
 - CRUD operations for tasks with pagination and sorting
 - Role-based access with `USER`, `ADMIN`, and `SUPER_ADMIN`
 - Protected admin management for users, roles, and tasks
+- Admin approval workflow: `ADMIN` and `SUPER_ADMIN` accounts created by admins start as `PENDING` and must be approved before login
 - Role-based task assignment to users and administrators
 - Refresh-token rotation with database persistence and revocation
 - Password-reset request and confirmation endpoints
 - MongoDB audit log for every task change
-- Global exception handling with consistent API responses
+- Global exception handling with consistent API responses and specific exception types
 - Input validation and Swagger documentation
 - Unit tests for services and controllers
 - Dockerized for easy deployment
+- Database backup and restore scripts (`backup.ps1`, `restore.ps1`)
 - CORS configured for Angular frontend integration
 - Public signup always creates a `USER`; elevated roles require admin authorization
 
@@ -97,6 +99,78 @@ On Windows PowerShell, quote the profile property:
 mvn spring-boot:run "-Dspring-boot.run.profiles=mongo"
 ```
 
+## Recommended Local Development Setup
+
+### 1. Start Docker Desktop
+
+Start Docker Desktop and wait until it shows **Running**.
+
+### 2. Start MySQL and MongoDB
+
+```powershell
+cd D:\Projects\Portfolio\portfolio-springboot-backend
+docker compose up -d mysql mongodb
+docker compose ps
+```
+
+Both containers should be `Up`, and MySQL should be `healthy`.
+
+If Docker Desktop was stopped and the containers are gone, the same command recreates them:
+
+```powershell
+docker compose up -d mysql mongodb
+```
+
+### 3. Run the backend in IntelliJ IDEA
+
+1. Open the project folder:
+
+```text
+D:\Projects\Portfolio\portfolio-springboot-backend
+```
+
+2. Wait for Maven to import the project.
+3. Go to **Run > Edit Configurations**.
+4. Create a new **Spring Boot** configuration:
+   - **Name:** `PortfolioApplication (mongo)`
+   - **Main class:** `com.premkarthik.portfolio.PortfolioApplication`
+   - **Active profiles:** `mongo`
+   - **Working directory:** `D:\Projects\Portfolio\portfolio-springboot-backend`
+5. Click **Run**.
+
+Backend URL:
+
+```text
+http://localhost:8080
+```
+
+Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+### 4. Run the frontend in VS Code
+
+1. Open the project folder in VS Code:
+
+```text
+D:\Projects\Portfolio\portfolio-springboot-frontend
+```
+
+2. Open the integrated terminal: **Terminal > New Terminal**.
+3. Run:
+
+```powershell
+npm.cmd run start -- --port 4200 --open
+```
+
+Frontend URL:
+
+```text
+http://localhost:4200
+```
+
 ## Run the Complete Stack with Docker
 
 ```bash
@@ -155,6 +229,9 @@ See the frontend README for more details.
 | DELETE | `/api/tasks/{id}` | Delete a task |
 | GET | `/api/admin/audit-logs` | Admin-only audit logs |
 | GET | `/api/admin/users` | List users for administrators |
+| GET | `/api/admin/users/pending` | List accounts pending approval |
+| POST | `/api/admin/users/{id}/approve` | Approve a pending account |
+| POST | `/api/admin/users/{id}/reject` | Reject a pending account |
 | POST | `/api/admin/users` | Create a user with an authorized role |
 | PATCH | `/api/admin/users/{id}/role` | Change a user's role |
 | PUT | `/api/admin/users/{id}` | Update a user's username, email, and role |
@@ -174,11 +251,23 @@ Admin access rules:
 - `ADMIN` users can assign tasks only to `USER` accounts.
 - `SUPER_ADMIN` users can assign tasks to `USER` and `ADMIN` accounts.
 
+## Sample Accounts
+
+These accounts are seeded for local development and testing:
+
+| Username | Email | Password | Role | Status |
+|---|---|---|---|---|
+| `superadmin` | superadmin@example.com | `password123` | `SUPER_ADMIN` | ACTIVE |
+| `admin` | admin@example.com | `password123` | `ADMIN` | ACTIVE |
+| `user` | user@example.com | `password123` | `USER` | ACTIVE |
+
+Use any of these accounts to log in through the frontend or API.
+
 ## Sample Login
 
 ```json
 {
-  "username": "demo",
+  "username": "superadmin",
   "password": "password123"
 }
 ```
@@ -227,6 +316,37 @@ SELECT * FROM tasks;
 SELECT u.username, t.title, t.status, t.priority
 FROM users u
 JOIN tasks t ON u.id = t.user_id;
+```
+
+## Database Backup and Restore
+
+Backup scripts are included to protect your local data.
+
+### Backup
+
+```powershell
+cd D:\Projects\Portfolio\portfolio-springboot-backend
+.\backup.ps1
+```
+
+Backups are saved to:
+
+```text
+D:\Portfolio-Backups\<timestamp>\
+```
+
+The script reads credentials from environment variables if set, otherwise uses local defaults:
+
+```powershell
+$env:PORTFOLIO_MYSQL_USER = "root"
+$env:PORTFOLIO_MYSQL_PASSWORD = "rootpass"
+$env:PORTFOLIO_MYSQL_DATABASE = "portfoliodb"
+```
+
+### Restore
+
+```powershell
+.\restore.ps1 -BackupPath "D:\Portfolio-Backups\<timestamp>"
 ```
 
 ## Testing
