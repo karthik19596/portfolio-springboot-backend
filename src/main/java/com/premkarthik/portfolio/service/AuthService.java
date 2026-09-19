@@ -7,6 +7,9 @@ import com.premkarthik.portfolio.dto.PasswordResetRequest;
 import com.premkarthik.portfolio.dto.RefreshTokenRequest;
 import com.premkarthik.portfolio.dto.SignupRequest;
 import com.premkarthik.portfolio.dto.UserProfileResponse;
+import com.premkarthik.portfolio.exception.AccountStatusException;
+import com.premkarthik.portfolio.exception.DuplicateResourceException;
+import com.premkarthik.portfolio.exception.InvalidTokenException;
 import com.premkarthik.portfolio.exception.ResourceNotFoundException;
 import com.premkarthik.portfolio.model.PasswordResetToken;
 import com.premkarthik.portfolio.model.RefreshToken;
@@ -76,10 +79,10 @@ public class AuthService {
     @Transactional
     public AuthResponse signup(SignupRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already taken");
+            throw new DuplicateResourceException("Username already taken");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new DuplicateResourceException("Email already registered");
         }
 
         User user = new User();
@@ -139,6 +142,17 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String status = user.getStatus();
+        if (status == null) {
+            status = "ACTIVE";
+        }
+        if (!"ACTIVE".equals(status)) {
+            throw new AccountStatusException("Account is not active. Current status: " + status);
+        }
+
         String token = jwtUtil.generateToken(authentication);
         String refreshToken = createRefreshToken(userDetails.getId());
 
@@ -154,10 +168,10 @@ public class AuthService {
     @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
         RefreshToken stored = refreshTokenRepository.findByTokenHash(hashToken(request.getRefreshToken()))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+                .orElseThrow(() -> new InvalidTokenException("Invalid refresh token"));
 
         if (stored.isRevoked() || stored.getExpiresAt().isBefore(Instant.now())) {
-            throw new IllegalArgumentException("Refresh token expired or revoked");
+            throw new InvalidTokenException("Refresh token expired or revoked");
         }
 
         stored.setRevoked(true);
@@ -204,10 +218,10 @@ public class AuthService {
     public void resetPassword(PasswordResetConfirmRequest request) {
         PasswordResetToken resetToken = passwordResetTokenRepository
                 .findByTokenHash(hashToken(request.getToken()))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset token"));
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired password reset token"));
 
         if (resetToken.isUsed() || resetToken.getExpiresAt().isBefore(Instant.now())) {
-            throw new IllegalArgumentException("Invalid or expired password reset token");
+            throw new InvalidTokenException("Invalid or expired password reset token");
         }
 
         User user = resetToken.getUser();

@@ -50,6 +50,26 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(adminService.getUsers(authentication)));
     }
 
+    @GetMapping("/users/pending")
+    public ResponseEntity<ApiResponse<List<AdminUserResponse>>> getPendingUsers(
+            Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(adminService.getPendingUsers(authentication)));
+    }
+
+    @PostMapping("/users/{id}/approve")
+    public ResponseEntity<ApiResponse<AdminUserResponse>> approveUser(
+            @PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "User approved", adminService.approveUser(id, authentication)));
+    }
+
+    @PostMapping("/users/{id}/reject")
+    public ResponseEntity<ApiResponse<Void>> rejectUser(
+            @PathVariable Long id, Authentication authentication) {
+        adminService.rejectUser(id, authentication);
+        return ResponseEntity.ok(ApiResponse.success("User rejected", null));
+    }
+
     @PostMapping("/users")
     public ResponseEntity<ApiResponse<AdminUserResponse>> createUser(
             @Valid @RequestBody AdminUserCreateRequest request,

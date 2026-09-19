@@ -13,6 +13,7 @@ public class AdminUserResponse {
     private String username;
     private String email;
     private String role;
+    private String status;
     private LocalDateTime createdAt;
 
     public static AdminUserResponse from(User user) {
@@ -21,6 +22,7 @@ public class AdminUserResponse {
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole(),
+                user.getStatus(),
                 user.getCreatedAt()
         );
     }

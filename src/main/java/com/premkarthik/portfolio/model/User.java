@@ -31,6 +31,8 @@ public class User {
     @Column(nullable = false)
     private String role = "USER";
 
+    private String status = "ACTIVE";
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

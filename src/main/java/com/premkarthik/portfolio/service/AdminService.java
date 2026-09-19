@@ -6,6 +6,9 @@ import com.premkarthik.portfolio.dto.AdminUserUpdateRequest;
 import com.premkarthik.portfolio.dto.AdminUserCreateRequest;
 import com.premkarthik.portfolio.dto.RoleUpdateRequest;
 import com.premkarthik.portfolio.dto.TaskRequest;
+import com.premkarthik.portfolio.exception.BusinessRuleException;
+import com.premkarthik.portfolio.exception.DuplicateResourceException;
+import com.premkarthik.portfolio.exception.InvalidRoleException;
 import com.premkarthik.portfolio.exception.ResourceNotFoundException;
 import com.premkarthik.portfolio.model.Task;
 import com.premkarthik.portfolio.model.User;
@@ -60,18 +63,18 @@ public class AdminService {
     public AdminUserResponse createUser(AdminUserCreateRequest request, Authentication authentication) {
         String role = request.getRole().trim().toUpperCase();
         if (!isSupportedRole(role)) {
-            throw new IllegalArgumentException("Role must be USER, ADMIN, or SUPER_ADMIN");
+            throw new InvalidRoleException("Role must be USER, ADMIN, or SUPER_ADMIN");
         }
         if (role.equals("ADMIN") || role.equals("SUPER_ADMIN")) {
             if (!isSuperAdmin(authentication)) {
-                throw new IllegalArgumentException("Only a SUPER_ADMIN can create administrator accounts");
+                throw new InvalidRoleException("Only a SUPER_ADMIN can create administrator accounts");
             }
         }
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already taken");
+            throw new DuplicateResourceException("Username already taken");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new DuplicateResourceException("Email already registered");
         }
 
         User user = new User();
@@ -79,7 +82,40 @@ public class AdminService {
         user.setEmail(request.getEmail().trim());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(role);
+        user.setStatus(role.equals("USER") ? "ACTIVE" : "PENDING");
         return AdminUserResponse.from(userRepository.save(user));
+    }
+
+    public List<AdminUserResponse> getPendingUsers(Authentication authentication) {
+        boolean superAdmin = isSuperAdmin(authentication);
+        return userRepository.findAllByStatus("PENDING").stream()
+                .filter(user -> superAdmin || user.getRole().equals("USER"))
+                .map(AdminUserResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public AdminUserResponse approveUser(Long userId, Authentication authentication) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        ensureAdminManagementAllowed(user, authentication);
+        if (!"PENDING".equals(user.getStatus())) {
+            throw new BusinessRuleException("User is not pending approval");
+        }
+        user.setStatus("ACTIVE");
+        return AdminUserResponse.from(userRepository.save(user));
+    }
+
+    @Transactional
+    public void rejectUser(Long userId, Authentication authentication) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        ensureAdminManagementAllowed(user, authentication);
+        if (!"PENDING".equals(user.getStatus())) {
+            throw new BusinessRuleException("User is not pending approval");
+        }
+        user.setStatus("REJECTED");
+        userRepository.save(user);
     }
 
     @Transactional
@@ -87,14 +123,14 @@ public class AdminService {
                                         Authentication authentication) {
         String role = request.getRole().trim().toUpperCase();
         if (!isSupportedRole(role)) {
-            throw new IllegalArgumentException("Role must be USER, ADMIN, or SUPER_ADMIN");
+            throw new InvalidRoleException("Role must be USER, ADMIN, or SUPER_ADMIN");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         ensureAdminManagementAllowed(user, authentication);
         if (role.equals("SUPER_ADMIN") && !isSuperAdmin(authentication)) {
-            throw new IllegalArgumentException("Only a SUPER_ADMIN can assign the SUPER_ADMIN role");
+            throw new InvalidRoleException("Only a SUPER_ADMIN can assign the SUPER_ADMIN role");
         }
         user.setRole(role);
         return AdminUserResponse.from(userRepository.save(user));
@@ -105,20 +141,20 @@ public class AdminService {
                                         Authentication authentication) {
         String role = request.getRole().trim().toUpperCase();
         if (!isSupportedRole(role)) {
-            throw new IllegalArgumentException("Role must be USER, ADMIN, or SUPER_ADMIN");
+            throw new InvalidRoleException("Role must be USER, ADMIN, or SUPER_ADMIN");
         }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         ensureAdminManagementAllowed(user, authentication);
         if (role.equals("SUPER_ADMIN") && !isSuperAdmin(authentication)) {
-            throw new IllegalArgumentException("Only a SUPER_ADMIN can assign the SUPER_ADMIN role");
+            throw new InvalidRoleException("Only a SUPER_ADMIN can assign the SUPER_ADMIN role");
         }
         if (userRepository.existsByUsernameAndIdNot(request.getUsername(), userId)) {
-            throw new IllegalArgumentException("Username already taken");
+            throw new DuplicateResourceException("Username already taken");
         }
         if (userRepository.existsByEmailAndIdNot(request.getEmail(), userId)) {
-            throw new IllegalArgumentException("Email already registered");
+            throw new DuplicateResourceException("Email already registered");
         }
 
         user.setUsername(request.getUsername());
@@ -132,7 +168,7 @@ public class AdminService {
         User currentUser = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (currentUser.getId().equals(userId)) {
-            throw new IllegalArgumentException("You cannot delete your own account");
+            throw new BusinessRuleException("You cannot delete your own account");
         }
 
         User user = userRepository.findById(userId)
@@ -147,7 +183,7 @@ public class AdminService {
     private void ensureAdminManagementAllowed(User target, Authentication authentication) {
         if ((target.getRole().equals("ADMIN") || target.getRole().equals("SUPER_ADMIN"))
                 && !isSuperAdmin(authentication)) {
-            throw new IllegalArgumentException("Only a SUPER_ADMIN can manage administrator accounts");
+            throw new InvalidRoleException("Only a SUPER_ADMIN can manage administrator accounts");
         }
     }
 
@@ -199,7 +235,7 @@ public class AdminService {
 
     private User getAssignee(Long userId) {
         if (userId == null) {
-            throw new IllegalArgumentException("An assignee is required");
+            throw new BusinessRuleException("An assignee is required");
         }
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignee not found"));
@@ -207,11 +243,11 @@ public class AdminService {
 
     private void validateAssignment(User creator, User assignee) {
         if (creator.getRole().equals("ADMIN") && !assignee.getRole().equals("USER")) {
-            throw new IllegalArgumentException("ADMIN users can assign tasks only to USER accounts");
+            throw new InvalidRoleException("ADMIN users can assign tasks only to USER accounts");
         }
         if (creator.getRole().equals("SUPER_ADMIN")
                 && !(assignee.getRole().equals("USER") || assignee.getRole().equals("ADMIN"))) {
-            throw new IllegalArgumentException("SUPER_ADMIN users can assign tasks to USER or ADMIN accounts");
+            throw new InvalidRoleException("SUPER_ADMIN users can assign tasks to USER or ADMIN accounts");
         }
     }
 
