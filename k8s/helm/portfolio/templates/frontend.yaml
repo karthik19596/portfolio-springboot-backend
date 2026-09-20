@@ -15,6 +15,12 @@ spec:
       labels:
         app: frontend
     spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.imagePullSecrets }}
+        - name: {{ .name }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: frontend
           image: "{{ .Values.images.frontend.repository }}:{{ .Values.images.frontend.tag }}"
@@ -29,8 +35,12 @@ kind: Service
 metadata:
   name: frontend
   namespace: {{ .Values.namespace }}
+  {{- with .Values.service.frontend.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  type: ClusterIP
+  type: {{ .Values.service.frontend.type }}
   selector:
     app: frontend
   ports:

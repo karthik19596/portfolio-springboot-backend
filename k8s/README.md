@@ -194,6 +194,52 @@ Pull requests run tests and builds. Pushes to `main` also publish images to
 GitHub Container Registry. The local Kubernetes cluster uses locally built
 images; cloud Kubernetes deployments should use the published GHCR image tags.
 
+## Cloud environment setup (GKE Autopilot)
+
+Install the Google Cloud CLI and Helm once:
+
+```powershell
+winget install --id Google.CloudSDK --silent
+winget install --id Helm.Helm --silent
+```
+
+Open a new terminal afterwards so the updated `PATH` is picked up.
+
+Authenticate, create the project, and link a billing account:
+
+```powershell
+gcloud auth login
+gcloud projects create portfolio-springboot --name="Portfolio Spring Boot"
+gcloud config set project portfolio-springboot
+gcloud billing accounts list
+gcloud billing projects link portfolio-springboot --billing-account=<BILLING_ACCOUNT_ID>
+```
+
+`gcloud billing projects describe portfolio-springboot` must report
+`billingEnabled: true` before anything else works. A newly created free-trial
+billing account can report `open: false` for a while; API enablement fails with
+`UREQ_PROJECT_BILLING_NOT_OPEN` until Google finishes verifying the payment
+method.
+
+Enable the APIs and create the cluster:
+
+```powershell
+gcloud services enable container.googleapis.com --project portfolio-springboot
+gcloud container clusters create-auto portfolio --region us-central1
+```
+
+Point kubectl and Helm at the cluster. Both read the same kubeconfig, so one
+command covers them:
+
+```powershell
+gcloud container clusters get-credentials portfolio --region us-central1
+kubectl get nodes
+kubectl config get-contexts
+```
+
+Autopilot reports no nodes until the first workload is scheduled, so an empty
+`kubectl get nodes` right after creation is normal.
+
 ## Helm
 
 The Helm chart is located at:
@@ -237,3 +283,8 @@ helm lint k8s\helm\portfolio `
 ```
 
 `values-local.yaml` is ignored by Git because it contains local credentials.
+
+For a cloud installation on GKE Autopilot, use `values-gke.example.yaml` as the
+starting point instead. The chart README at `k8s/helm/portfolio/README.md`
+covers the GHCR pull Secret, the static IP, the DNS record, and the
+Google-managed certificate.

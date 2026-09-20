@@ -88,7 +88,74 @@ helm upgrade --install portfolio . `
   --set images.frontend.tag=<FRONTEND_TAG>
 ```
 
-Private GHCR images also require an `imagePullSecret`.
+Private GHCR images also require an `imagePullSecret`. Create one and reference
+it through `imagePullSecrets`:
+
+```powershell
+kubectl create secret docker-registry ghcr-pull-secret `
+  --namespace portfolio `
+  --docker-server=ghcr.io `
+  --docker-username=karthik19596 `
+  --docker-password=<GITHUB_PACKAGES_TOKEN>
+```
+
+```yaml
+imagePullSecrets:
+  - name: ghcr-pull-secret
+```
+
+## GKE Autopilot installation
+
+Copy the cloud example values and replace every placeholder, including the
+public host name:
+
+```powershell
+Copy-Item values-gke.example.yaml values-gke.yaml
+```
+
+The cloud values differ from the local ones in five ways:
+
+- `images.*` point at the GHCR packages and use `pullPolicy: Always`.
+- `imagePullSecrets` stays empty while both GHCR packages are public, and takes
+  the pull Secret name if either becomes private.
+- `resources.*` match the Autopilot minimum of 250m CPU and 512Mi memory per
+  Pod, with limits equal to requests, because Autopilot rewrites anything lower.
+- `storage.className` is `standard-rwo`, the Autopilot balanced Persistent Disk class.
+- The Ingress uses the `gce` class with a Google-managed certificate instead of
+  NGINX, and the frontend Service carries the `cloud.google.com/neg` annotation
+  so the load balancer routes to Pods directly.
+
+Reserve a global static IP and point the domain at it before installing:
+
+```powershell
+gcloud compute addresses create portfolio-ip --global
+gcloud compute addresses describe portfolio-ip --global --format="value(address)"
+```
+
+Create an `A` record for the host in `ingress.host` that points to that address.
+The managed certificate stays in `Provisioning` until DNS resolves, which can
+take up to 60 minutes.
+
+Install the chart:
+
+```powershell
+helm upgrade --install portfolio . `
+  --namespace portfolio `
+  --create-namespace `
+  --values values-gke.yaml
+```
+
+Watch the certificate and load balancer become ready:
+
+```powershell
+kubectl get managedcertificate -n portfolio -w
+kubectl get ingress portfolio -n portfolio
+```
+
+Prometheus, Grafana, and Zipkin stay internal. Reach them with
+`kubectl port-forward` rather than exposing them through the Ingress.
+
+`values-gke.yaml` is ignored by Git because it contains credentials.
 
 ## Render and validate
 

@@ -46,3 +46,4 @@ Portfolio-Backups/
 /frontend/.angular/
 k8s/secret.yaml
 k8s/helm/portfolio/values-local.yaml
+k8s/helm/portfolio/values-gke.yaml

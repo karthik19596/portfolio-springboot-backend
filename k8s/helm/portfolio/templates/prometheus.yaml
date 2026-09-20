@@ -49,6 +49,9 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   accessModes: [ReadWriteOnce]
+  {{- if .Values.storage.className }}
+  storageClassName: {{ .Values.storage.className | quote }}
+  {{- end }}
   resources:
     requests:
       storage: {{ .Values.storage.prometheus }}

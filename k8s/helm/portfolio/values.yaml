@@ -10,6 +10,8 @@ images:
     tag: local
     pullPolicy: IfNotPresent
 
+imagePullSecrets: []
+
 secrets:
   create: true
   name: portfolio-secrets
@@ -38,15 +40,29 @@ resources:
       memory: 512Mi
 
 storage:
+  className: ""
   mysql: 1Gi
   mongodb: 1Gi
   prometheus: 1Gi
   grafana: 1Gi
 
+service:
+  frontend:
+    type: ClusterIP
+    annotations: {}
+
 ingress:
   enabled: true
   className: nginx
   host: portfolio-helm.local
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: ""
+  managedCertificate:
+    enabled: false
+    name: portfolio-cert
+    domains: []
 
 grafana:
   adminUser: admin

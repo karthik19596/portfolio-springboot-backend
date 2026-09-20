@@ -1,0 +1,72 @@
+namespace: portfolio
+
+images:
+  backend:
+    repository: ghcr.io/karthik19596/portfolio-springboot-backend
+    tag: latest
+    pullPolicy: Always
+  frontend:
+    repository: ghcr.io/karthik19596/portfolio-springboot-frontend
+    tag: latest
+    pullPolicy: Always
+
+# Both GHCR packages are public today, so no pull Secret is needed. If either
+# package is switched to private, create the Secret and list it here:
+#   - name: ghcr-pull-secret
+imagePullSecrets: []
+
+secrets:
+  create: true
+  mysqlRootPassword: replace-me
+  mysqlPassword: replace-me
+  jwtSecret: replace-with-a-long-random-secret
+
+grafana:
+  adminPassword: replace-me
+
+# Autopilot raises any Pod below 250m CPU / 512Mi to that minimum and sets
+# limits equal to requests, so the values are declared that way here.
+resources:
+  default:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+  frontend:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+storage:
+  className: standard-rwo
+  mysql: 10Gi
+  mongodb: 10Gi
+  prometheus: 10Gi
+  grafana: 5Gi
+
+service:
+  frontend:
+    type: ClusterIP
+    annotations:
+      cloud.google.com/neg: '{"ingress": true}'
+
+ingress:
+  enabled: true
+  className: gce
+  host: portfolio.example.com
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: portfolio-ip
+    networking.gke.io/managed-certificates: portfolio-cert
+  tls:
+    enabled: false
+    secretName: ""
+  managedCertificate:
+    enabled: true
+    name: portfolio-cert
+    domains:
+      - portfolio.example.com
